@@ -23,6 +23,9 @@ use tracing::instrument;
 #[cfg(all(windows, feature = "pktmon"))]
 pub mod pktmon;
 
+#[cfg(all(windows, feature = "pktmon"))]
+mod compat;
+
 #[cfg(feature = "pcap")]
 pub mod pipe;
 
@@ -37,6 +40,7 @@ type BoxError = Box<dyn Error + Send + Sync>;
 #[derive(Debug)]
 pub enum CaptureError {
     /// The device or file could not be opened
+    #[cfg_attr(not(feature = "pcap"), allow(dead_code))]
     Device(BoxError),
     /// The packet filter could not be applied
     Filter(BoxError),
@@ -391,6 +395,7 @@ fn blocking_stream(read: impl FnOnce(&mut dyn FnMut(Packet) -> bool) + Send + 's
 }
 
 /// Derives a stable source id from whatever identifies the source, like a device name or a file path
+#[cfg(feature = "pcap")]
 fn source_id(key: impl std::hash::Hash) -> u64 {
     use std::hash::{DefaultHasher, Hasher};
 

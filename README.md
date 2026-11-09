@@ -6,6 +6,45 @@ json output format is based on the format of [HSR-Scanner](https://github.com/ke
 
 made to be used with [fribbels hsr optimizer](https://github.com/fribbels/hsr-optimizer)
 
+## Lemonawa's PPPoE / IPv6 pktmon build
+
+This fork adapts the Windows pktmon backend for a PPPoE + IPv6 connection.
+It retains the GUI, Fribbels live import and the original game decryption library.
+
+- Capture PPPoE Session frames alongside the game's UDP ports, so Windows' port
+  filter also captures server replies inside PPPoE.
+- Unwrap PPPoE and VLAN headers and normalize IPv4 / IPv6 server traffic before
+  decoding. Deduplicate KCP fragments across pktmon components by connection and
+  sequence number.
+- Allow 250 ms for reordered fragments. When a capture gap remains, skip the
+  affected message and recover complete subsequent messages. Sequence numbers
+  are rebuilt **only in the passive decoder**; the game connection stays as-is.
+  Missing data in an inventory response still requires another login.
+- Replay ETL files through Windows' `pktmon etl2pcap` conversion, with a finite
+  end-of-file and the same normalization / recovery pipeline as live capture.
+- Check this fork's releases for updates.
+
+Build the Windows GUI executable:
+
+```powershell
+cargo build --locked --release --no-default-features --features pktmon,stream,gui
+```
+
+Start the executable as administrator at the game's title screen, then click to
+enter the game. The startup log confirms `PPPoE/IPv6 server capture and
+complete-message KCP recovery enabled`.
+
+Validation used a private login capture and compared relics, light cones,
+character forms and materials against a reference export.
+The capture and account data stay outside this repository. For local regression
+checks, `examples/replay_frames.rs` reads a file containing repeated little-endian
+u32 frame lengths followed by raw Ethernet frames:
+
+```powershell
+cargo test --locked --release --no-default-features --features pktmon,stream,gui
+cargo run --locked --release --no-default-features --features pktmon,stream,gui --example replay_frames -- frames.bin export.json baseline.json
+```
+
 ## run
 
 - If on Linux, or you know you want to use pcap (if you don't know what this means, you don't need to worry about it), follow the [pcap instructions](#pcap-instructions) at the bottom

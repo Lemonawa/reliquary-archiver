@@ -24,7 +24,7 @@ pub fn should_spawn_after_exit() -> bool {
     SPAWN_UPDATED_VERSION.load(Ordering::SeqCst)
 }
 
-const REPO_OWNER: &str = "IceDynamix";
+const REPO_OWNER: &str = "Lemonawa";
 const REPO_NAME: &str = "reliquary-archiver";
 const TARGET: &str = "x64";
 
